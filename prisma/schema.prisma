@@ -1,0 +1,310 @@
+// ScholarTrack — AI-powered scholarship platform for African students
+// Prisma schema (SQLite for dev; swappable to Postgres for prod)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER & STUDENT PROFILE
+// ============================================================
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  passwordHash    String?
+  image           String?
+  emailVerified   DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Student profile (1:1)
+  profile         StudentProfile?
+  accounts        Account[]
+  sessions        Session[]
+
+  // Relations
+  applications    Application[]
+  documents       Document[]
+  essays          Essay[]
+  savedScholarships SavedScholarship[]
+  activities      Activity[]
+}
+
+model StudentProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Personal
+  fullName        String?
+  avatarUrl       String?
+  bio             String?
+  country         String?   // e.g. "Ethiopia"
+  city            String?
+  dateOfBirth     DateTime?
+  gender          String?   // "male" | "female" | "other" | "prefer_not_to_say"
+
+  // Academic background
+  educationLevel  String?   // "high_school" | "undergraduate" | "masters" | "phd" | "postdoc"
+  currentSchool   String?
+  fieldOfStudy    String?   // e.g. "Computer Science"
+  gpa             Float?    // e.g. 3.8 (on 4.0 scale)
+  graduationYear  Int?
+  testScores      String?   // JSON: { "toefl": 110, "ielts": 7.5, "gre": 320, "sat": 1450 }
+
+  // Targets
+  targetCountries String?   // JSON array: ["USA", "UK", "Germany"]
+  targetDegree    String?   // "bachelors" | "masters" | "phd"
+  targetField     String?
+  startTerm       String?   // "Fall 2026"
+
+  // Financial
+  financialNeed   String?   // "low" | "medium" | "high" | "full"
+  budget          Int?      // max USD/year family can contribute
+
+  // Languages
+  languages       String?   // JSON array: ["Amharic", "English"]
+
+  // Onboarding
+  onboardingComplete Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Indexes
+  @@index([country])
+  @@index([educationLevel])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================
+// SCHOLARSHIP DATABASE
+// ============================================================
+
+model Scholarship {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  provider        String   // e.g. "Mastercard Foundation"
+  providerLogo    String?
+  description     String   // long-form
+  eligibility     String   // long-form eligibility criteria
+  benefits        String   // what's covered
+  applicationUrl  String
+  officialUrl     String?
+
+  // Classification
+  level           String   // "bachelors" | "masters" | "phd" | "postdoc" | "research" | "any"
+  fundedBy        String?  // country funding it
+  hostCountries   String   // JSON array of host countries
+  eligibleCountries String? // JSON array (null = worldwide)
+  fieldsOfStudy   String   // JSON array
+
+  // Financials
+  fundingType     String   // "full" | "partial" | "tuition_only" | "stipend"
+  coverage        String?  // JSON array: ["tuition", "living", "flights", "insurance", "books"]
+  amount          Int?     // USD value (annual, estimated)
+  duration        String?  // "2 years", "full program"
+
+  // Timing
+  deadline        DateTime?
+  deadlineType    String?  // "fixed" | "rolling" | "varies"
+  opensAt         DateTime?
+  nextCycle       String?
+
+  // Difficulty / competitiveness
+  competitiveness String?  // "low" | "medium" | "high" | "very_high"
+  acceptanceRate  Float?
+
+  // Meta
+  tags            String?  // JSON array
+  featured        Boolean  @default(false)
+  verified        Boolean  @default(true)
+  views           Int      @default(0)
+  rating          Float?   // 0-5 user ratings
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  applications    Application[]
+  savedBy         SavedScholarship[]
+
+  @@index([level])
+  @@index([deadline])
+  @@index([featured])
+  @@index([fundingType])
+}
+
+// ============================================================
+// APPLICATION TRACKER (per-user)
+// ============================================================
+
+model Application {
+  id              String   @id @default(cuid())
+  userId          String
+  scholarshipId   String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarship     Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  status          String   @default("interested")
+  // "interested" | "researching" | "preparing" | "submitted" | "interview" | "offered" | "rejected" | "withdrawn"
+
+  progress        Int      @default(0)  // 0-100
+  notes           String?
+  appliedAt       DateTime?
+  decisionAt      DateTime?
+  deadlineReminder DateTime?
+
+  // Linked artifacts
+  essays          Essay[]
+  documents       Document[]
+
+  // AI insights cached
+  matchScore      Int?     // 0-100 from AI matcher
+  matchReasons    String?  // JSON array of strings
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, scholarshipId])
+  @@index([status])
+}
+
+model SavedScholarship {
+  id            String   @id @default(cuid())
+  userId        String
+  scholarshipId String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, scholarshipId])
+}
+
+// ============================================================
+// ESSAY LAB (AI-assisted)
+// ============================================================
+
+model Essay {
+  id              String   @id @default(cuid())
+  userId          String
+  applicationId   String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application     Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  title           String
+  prompt          String?   // original essay prompt
+  type            String    // "sop" | "personal_statement" | "diversity" | "research" | "scholarship_specific" | "recommendation_draft"
+  content         String    // current draft
+  wordCount       Int       @default(0)
+
+  // AI feedback (cached, last revision)
+  aiScore         Int?      // 0-100
+  aiFeedback      String?   // JSON: { strengths: [], weaknesses: [], suggestions: [] }
+  aiRewrite       String?   // AI-improved version
+  aiSummary       String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================
+// DOCUMENT VAULT
+// ============================================================
+
+model Document {
+  id              String   @id @default(cuid())
+  userId          String
+  applicationId   String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application     Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  name            String
+  type            String   // "cv" | "transcript" | "recommendation" | "passport" | "test_score" | "essay" | "certificate" | "other"
+  fileUrl         String?  // local file path or external URL
+  fileSize        Int?
+  mimeType        String?
+  notes           String?
+  tags            String?  // JSON array
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+}
+
+// ============================================================
+// RESOURCES LIBRARY
+// ============================================================
+
+model Resource {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  category        String   // "visa" | "essays" | "interviews" | "recommendations" | "tests" | "finances" | "travel" | "culture" | "academic"
+  type            String   // "guide" | "template" | "checklist" | "video" | "article" | "tool"
+  summary         String
+  content         String   // markdown / long form
+  coverImage      String?
+  readMinutes     Int?
+  tags            String?  // JSON array
+  country         String?  // specific country if relevant
+  featured        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category])
+  @@index([type])
+}
+
+// ============================================================
+// ACTIVITY LOG
+// ============================================================
+
+model Activity {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // "viewed_scholarship" | "saved" | "applied" | "essay_created" | "doc_uploaded" | "ai_match_run" | etc.
+  description     String
+  metadata        String?  // JSON
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
