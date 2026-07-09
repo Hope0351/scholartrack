@@ -1,0 +1,20 @@
+{
+  "name": "ScholarTrack Africa",
+  "short_name": "ScholarTrack",
+  "description": "AI-powered scholarship discovery and application platform for African students",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF9",
+  "theme_color": "#F59E0B",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "en",
+  "orientation": "portrait-primary"
+}

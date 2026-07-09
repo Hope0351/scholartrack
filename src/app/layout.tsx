@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ScholarTrack Africa — AI-Powered Scholarships for African Students",
   description:
-    "Find, evaluate, and apply to international scholarships with AI-powered matching, essay coaching, eligibility checks, and a complete application tracker. Built for African students.",
+    "Find, evaluate, and apply to international scholarships with AI-powered matching, essay coaching, eligibility checks, mock interviews, and a complete application tracker. Built for African students.",
   keywords: [
     "scholarships for African students",
     "Mastercard Foundation",
@@ -26,10 +27,12 @@ export const metadata: Metadata = {
     "Rhodes Scholarship",
     "AI scholarship matcher",
     "SOP writing",
+    "mock interview",
     "graduate school applications",
     "Africa education",
   ],
   authors: [{ name: "Hope0351" }],
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "ScholarTrack Africa",
     description: "AI-powered scholarship platform for African students.",
@@ -44,6 +47,15 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAFAF9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0C0A09" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,8 +66,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <Toaster />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

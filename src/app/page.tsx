@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   GraduationCap, Search, Sparkles, FileText, FolderOpen, BookOpen,
   LayoutDashboard, Award, Bell, ChevronRight, X, Menu, Loader2,
-  Target, Calendar, TrendingUp, Heart, ArrowRight, CheckCircle2,
+  Target, Calendar, TrendingUp, Heart, ArrowRight, CheckCircle2, GitCompare,
   AlertCircle, Lightbulb, Star, Clock, MapPin, DollarSign, Users,
   Bot, PenLine, FileCheck, Globe, ChevronLeft, Bookmark, BookmarkCheck,
   ExternalLink, Filter, RefreshCw, Plus, Edit3, Download, ThumbsUp,
@@ -40,6 +40,14 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Sheet as MobileSheet,
 } from '@/components/ui/sheet'
+import { ThemeToggle } from '@/components/theme-toggle'
+import {
+  PieChart as RechartsPieChart, Pie as RechartsPie, Cell as RechartsCell,
+  BarChart as RechartsBarChart, Bar as RechartsBar,
+  XAxis as RechartsXAxis, YAxis as RechartsYAxis,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import {
   parseJSON, daysUntil, formatMoney, formatDate, scoreColor, statusColor,
   competitivenessColor, fundingTypeLabel, levelLabel,
@@ -48,7 +56,7 @@ import {
 // ============================================================
 // Types
 // ============================================================
-type View = 'landing' | 'dashboard' | 'browse' | 'scholarship' | 'matcher' | 'essay' | 'tracker' | 'documents' | 'resources' | 'eligibility' | 'recletter'
+type View = 'landing' | 'dashboard' | 'browse' | 'scholarship' | 'matcher' | 'essay' | 'tracker' | 'documents' | 'resources' | 'eligibility' | 'recletter' | 'interview' | 'compare' | 'calendar' | 'analytics' | 'profile'
 
 type Profile = {
   id: string
@@ -190,6 +198,11 @@ export default function Home() {
             <EligibilityView scholarship={selectedScholarship} navigate={navigate} />
           )}
           {view === 'recletter' && <RecLetterView />}
+          {view === 'interview' && <InterviewView />}
+          {view === 'compare' && <CompareView navigate={navigate} />}
+          {view === 'calendar' && <CalendarView navigate={navigate} />}
+          {view === 'analytics' && <AnalyticsView navigate={navigate} />}
+          {view === 'profile' && <ProfileView navigate={navigate} />}
         </motion.main>
       </AnimatePresence>
       <Footer navigate={navigate} />
@@ -208,13 +221,17 @@ function TopNav({
     { v: 'browse', label: 'Scholarships', icon: Award },
     { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
     { v: 'essay', label: 'Essay Lab', icon: PenLine },
+    { v: 'interview', label: 'Mock Interview', icon: MessageSquare },
+    { v: 'compare', label: 'Compare', icon: GitCompare },
     { v: 'tracker', label: 'Tracker', icon: Target },
+    { v: 'calendar', label: 'Calendar', icon: Calendar },
+    { v: 'analytics', label: 'Analytics', icon: TrendingUp },
     { v: 'documents', label: 'Documents', icon: FolderOpen },
     { v: 'resources', label: 'Resources', icon: BookOpen },
     { v: 'recletter', label: 'Rec Letters', icon: Bot },
   ]
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md dark:bg-stone-900/90 dark:border-stone-800">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <button onClick={() => navigate('landing')} className="flex items-center gap-2.5">
           <div className="relative h-9 w-9 overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 shadow-sm">
@@ -249,6 +266,7 @@ function TopNav({
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button
             size="sm"
             onClick={() => navigate('matcher')}
@@ -282,7 +300,11 @@ function MobileNavSheet({
     { v: 'browse', label: 'Browse Scholarships', icon: Award },
     { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
     { v: 'essay', label: 'Essay Lab', icon: PenLine },
+    { v: 'interview', label: 'AI Mock Interview', icon: MessageSquare },
+    { v: 'compare', label: 'Compare Scholarships', icon: GitCompare },
     { v: 'tracker', label: 'Application Tracker', icon: Target },
+    { v: 'calendar', label: 'Deadline Calendar', icon: Calendar },
+    { v: 'analytics', label: 'Analytics', icon: TrendingUp },
     { v: 'documents', label: 'Document Vault', icon: FolderOpen },
     { v: 'resources', label: 'Resources Library', icon: BookOpen },
     { v: 'recletter', label: 'Rec Letter Drafter', icon: Bot },
@@ -775,7 +797,7 @@ function DashboardView({ navigate }: { navigate: (v: View, s?: Scholarship) => v
               <div className="text-sm font-medium text-amber-900">Complete your profile for better AI matches</div>
               <div className="text-xs text-amber-700">Profiles with full academic + financial details get 35% more accurate match scores.</div>
             </div>
-            <Button size="sm" variant="outline" className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100">
+            <Button size="sm" variant="outline" className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100" onClick={() => navigate('profile')}>
               Complete now
             </Button>
           </CardContent>
@@ -2744,6 +2766,1105 @@ function RecLetterView() {
             </Card>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// v2: AI MOCK INTERVIEW VIEW
+// ============================================================
+function InterviewView() {
+  const { toast } = useToast()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [scholarshipTitle, setScholarshipTitle] = useState('Chevening Scholarships (UK)')
+  const [scholarshipProvider, setScholarshipProvider] = useState('UK FCDO')
+  const [programName, setProgramName] = useState('')
+  const [targetUniversity, setTargetUniversity] = useState('')
+  const [started, setStarted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [conversation, setConversation] = useState<{ role: 'interviewer' | 'student'; content: string }[]>([])
+  const [currentAnswer, setCurrentAnswer] = useState('')
+  const [feedback, setFeedback] = useState<any>(null)
+  const [interviewPlan, setInterviewPlan] = useState<string[]>([])
+  const [interviewComplete, setInterviewComplete] = useState(false)
+  const [scores, setScores] = useState<number[]>([])
+
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then((r) => r.json())
+      .then((d) => setProfile(d.user.profile))
+      .catch(() => {})
+  }, [])
+
+  const startInterview = async () => {
+    setLoading(true)
+    setStarted(true)
+    setConversation([])
+    setFeedback(null)
+    setScores([])
+    setInterviewComplete(false)
+    try {
+      const res = await fetch('/api/ai/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'start',
+          scholarshipTitle,
+          scholarshipProvider,
+          programName,
+          targetUniversity,
+          studentProfile: profile ? {
+            fullName: profile.fullName,
+            country: profile.country,
+            fieldOfStudy: profile.fieldOfStudy,
+            educationLevel: profile.educationLevel,
+            targetDegree: profile.targetDegree,
+            bio: profile.bio,
+          } : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to start')
+      if (!data.greeting || !data.openingQuestion) {
+        throw new Error('Invalid response from AI')
+      }
+      setConversation([{ role: 'interviewer', content: `${data.greeting}\n\n${data.openingQuestion}` }])
+      setInterviewPlan(data.interviewPlan || [])
+      toast({ title: 'Interview started', description: data.questionCategory })
+    } catch (e: any) {
+      console.error('[Interview] start failed:', e)
+      toast({ title: 'Failed to start', description: e.message, variant: 'destructive' })
+      // Keep started=true so user can see the error context, don't reset
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const submitAnswer = async () => {
+    if (!currentAnswer.trim()) return
+    setLoading(true)
+    const newConversation = [...conversation, { role: 'student' as const, content: currentAnswer }]
+    setConversation(newConversation)
+    const studentAnswer = currentAnswer
+    setCurrentAnswer('')
+    try {
+      const res = await fetch('/api/ai/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'answer',
+          scholarshipTitle,
+          studentProfile: profile ? {
+            fullName: profile.fullName,
+            country: profile.country,
+            fieldOfStudy: profile.fieldOfStudy,
+          } : undefined,
+          conversation: newConversation,
+          studentAnswer,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed')
+      setFeedback(data)
+      if (typeof data.score === 'number') setScores((s) => [...s, data.score])
+      if (data.isFinal) {
+        setInterviewComplete(true)
+        setConversation([...newConversation, { role: 'interviewer', content: data.finalSummary || data.nextQuestion || 'Interview complete.' }])
+        toast({ title: 'Interview complete', description: `Average score: ${Math.round([...scores, data.score].reduce((a, b) => a + b, 0) / [...scores, data.score].length)}/100` })
+      } else {
+        setConversation([...newConversation, { role: 'interviewer', content: data.nextQuestion }])
+      }
+    } catch (e: any) {
+      toast({ title: 'Failed', description: e.message, variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <Badge className="mb-3 bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">
+          <MessageSquare className="mr-1 h-3 w-3" /> AI Mock Interview
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Mock Scholarship Interview</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">
+          Practice with an AI panelist trained on top scholarship interview patterns (Chevening, Fulbright, Rhodes, etc.). Get real-time feedback and a final readiness score.
+        </p>
+      </div>
+
+      {/* Setup */}
+      {!started && (
+        <Card className="border-stone-200 dark:border-stone-800">
+          <CardHeader><CardTitle className="text-base">Interview Setup</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label>Scholarship</Label>
+                <Input value={scholarshipTitle} onChange={(e) => setScholarshipTitle(e.target.value)} placeholder="Chevening Scholarships" />
+              </div>
+              <div>
+                <Label>Provider</Label>
+                <Input value={scholarshipProvider} onChange={(e) => setScholarshipProvider(e.target.value)} placeholder="UK FCDO" />
+              </div>
+              <div>
+                <Label>Program (optional)</Label>
+                <Input value={programName} onChange={(e) => setProgramName(e.target.value)} placeholder="MSc Public Policy" />
+              </div>
+              <div>
+                <Label>University (optional)</Label>
+                <Input value={targetUniversity} onChange={(e) => setTargetUniversity(e.target.value)} placeholder="LSE" />
+              </div>
+            </div>
+            <Button
+              onClick={startInterview}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700"
+            >
+              {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Starting...</> : <><MessageSquare className="mr-2 h-4 w-4" /> Start Mock Interview</>}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Conversation */}
+      {started && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <Card className="border-stone-200 dark:border-stone-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Interview Transcript</CardTitle>
+                  {scores.length > 0 && (
+                    <Badge variant="outline">Avg: {avgScore}/100</Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="max-h-[500px] pr-4">
+                  <div className="space-y-4">
+                    {conversation.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.role === 'student' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                          msg.role === 'student'
+                            ? 'bg-amber-100 text-stone-900 dark:bg-amber-900/40 dark:text-amber-50'
+                            : 'bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                        }`}>
+                          <div className="mb-1 text-xs font-semibold uppercase opacity-60">
+                            {msg.role === 'student' ? 'You' : 'Interviewer'}
+                          </div>
+                          <div className="whitespace-pre-line text-sm">{msg.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {loading && (
+                      <div className="flex justify-start">
+                        <div className="rounded-2xl bg-stone-100 px-4 py-3 dark:bg-stone-800">
+                          <Loader2 className="h-4 w-4 animate-spin text-stone-500" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Answer input */}
+            {!interviewComplete && (
+              <Card className="border-stone-200 dark:border-stone-800">
+                <CardContent className="pt-4">
+                  <Label>Your Answer</Label>
+                  <Textarea
+                    value={currentAnswer}
+                    onChange={(e) => setCurrentAnswer(e.target.value)}
+                    placeholder="Type your answer to the interviewer's question..."
+                    rows={4}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitAnswer()
+                    }}
+                  />
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-xs text-stone-500">⌘+Enter to submit</p>
+                    <Button
+                      onClick={submitAnswer}
+                      disabled={loading || !currentAnswer.trim()}
+                      size="sm"
+                      className="bg-violet-600 text-white hover:bg-violet-700"
+                    >
+                      {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+                      Submit Answer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {interviewComplete && (
+              <Card className="border-violet-200 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/40">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <Award className="h-8 w-8 text-violet-600" />
+                    <div>
+                      <div className="text-lg font-bold text-violet-900 dark:text-violet-100">Interview Complete</div>
+                      <div className="text-sm text-violet-700 dark:text-violet-300">Average score: {avgScore}/100 across {scores.length} answers</div>
+                    </div>
+                  </div>
+                  <Button onClick={startInterview} variant="outline" className="mt-3">
+                    <RefreshCw className="mr-2 h-4 w-4" /> Restart Interview
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Feedback sidebar */}
+          <div className="space-y-4">
+            {feedback && (
+              <>
+                <Card className="border-stone-200 dark:border-stone-800">
+                  <CardHeader><CardTitle className="text-sm">Latest Feedback</CardTitle></CardHeader>
+                  <CardContent className="space-y-3">
+                    {typeof feedback.score === 'number' && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-stone-500">Score</span>
+                        <Badge className={scoreColor(feedback.score)}>{feedback.score}/100</Badge>
+                      </div>
+                    )}
+                    <p className="text-sm text-stone-700 dark:text-stone-300">{feedback.feedback}</p>
+                    {feedback.strengths?.length > 0 && (
+                      <div>
+                        <div className="mb-1 text-xs font-semibold uppercase text-emerald-700">Strengths</div>
+                        <ul className="space-y-1">
+                          {feedback.strengths.map((s: string, i: number) => (
+                            <li key={i} className="flex gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                              <CheckCircle2 className="h-3 w-3 flex-shrink-0 mt-0.5 text-emerald-500" />{s}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {feedback.improvements?.length > 0 && (
+                      <div>
+                        <div className="mb-1 text-xs font-semibold uppercase text-amber-700">Improvements</div>
+                        <ul className="space-y-1">
+                          {feedback.improvements.map((s: string, i: number) => (
+                            <li key={i} className="flex gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+                              <span className="mt-1 h-1 w-1 flex-shrink-0 rounded-full bg-amber-500" />{s}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {interviewPlan.length > 0 && (
+              <Card className="border-stone-200 dark:border-stone-800">
+                <CardHeader><CardTitle className="text-sm">Interview Plan</CardTitle></CardHeader>
+                <CardContent>
+                  <ul className="space-y-1.5">
+                    {interviewPlan.map((t, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-stone-600 dark:text-stone-400">
+                        <span className="font-mono text-stone-400">{i + 1}.</span>{t}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {scores.length > 0 && (
+              <Card className="border-stone-200 dark:border-stone-800">
+                <CardHeader><CardTitle className="text-sm">Score History</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="flex h-32 items-end gap-1.5">
+                    {scores.map((s, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div
+                          className={`w-full rounded-t ${s >= 75 ? 'bg-emerald-500' : s >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                          style={{ height: `${s}%` }}
+                        />
+                        <span className="text-[10px] text-stone-500">{s}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// v2: SCHOLARSHIP COMPARISON VIEW
+// ============================================================
+function CompareView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const [scholarships, setScholarships] = useState<Scholarship[]>([])
+  const [selected, setSelected] = useState<Scholarship[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/scholarships')
+      .then((r) => r.json())
+      .then((d) => { setScholarships(d.scholarships); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const toggleSelect = (s: Scholarship) => {
+    setSelected((prev) => {
+      if (prev.find((x) => x.id === s.id)) return prev.filter((x) => x.id !== s.id)
+      if (prev.length >= 3) return [prev[1], prev[2], s] // keep last 2 + new
+      return [...prev, s]
+    })
+  }
+
+  if (loading) return <LoadingState label="Loading scholarships..." />
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Badge className="mb-3 bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+          <GitCompare className="mr-1 h-3 w-3" /> Comparison Tool
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Compare Scholarships</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">Select up to 3 scholarships to compare side-by-side.</p>
+      </div>
+
+      {/* Selected count */}
+      <div className="mb-4 flex items-center gap-3">
+        <Badge variant="outline">{selected.length}/3 selected</Badge>
+        {selected.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={() => setSelected([])}>Clear all</Button>
+        )}
+      </div>
+
+      {/* Comparison table */}
+      {selected.length > 0 && (
+        <Card className="mb-6 overflow-hidden border-stone-200 dark:border-stone-800">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50">
+                    <th className="p-4 text-left font-medium text-stone-500 dark:text-stone-400 w-40">Attribute</th>
+                    {selected.map((s) => (
+                      <th key={s.id} className="p-4 text-left font-semibold text-stone-900 dark:text-stone-100 min-w-[200px]">
+                        <button onClick={() => navigate('scholarship', s)} className="hover:text-amber-700 text-left">
+                          {s.title}
+                        </button>
+                        <div className="text-xs font-normal text-stone-500">{s.provider}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: 'Level', get: (s: Scholarship) => levelLabel(s.level) },
+                    { label: 'Funding', get: (s: Scholarship) => fundingTypeLabel(s.fundingType) },
+                    { label: 'Amount/yr', get: (s: Scholarship) => formatMoney(s.amount) },
+                    { label: 'Host Countries', get: (s: Scholarship) => parseJSON<string[]>(s.hostCountries, []).join(', ') },
+                    { label: 'Fields', get: (s: Scholarship) => parseJSON<string[]>(s.fieldsOfStudy, []).join(', ') },
+                    { label: 'Duration', get: (s: Scholarship) => s.duration || '—' },
+                    { label: 'Deadline', get: (s: Scholarship) => formatDate(s.deadline) },
+                    { label: 'Days Left', get: (s: Scholarship) => {
+                        const d = daysUntil(s.deadline)
+                        return d !== null ? `${d} days` : '—'
+                      } },
+                    { label: 'Competitiveness', get: (s: Scholarship) => s.competitiveness?.replace('_', ' ') || '—' },
+                    { label: 'Coverage', get: (s: Scholarship) => parseJSON<string[]>(s.coverage, []).join(', ') || '—' },
+                    { label: 'Funded By', get: (s: Scholarship) => s.fundedBy || '—' },
+                    { label: 'Eligible Countries', get: (s: Scholarship) => parseJSON<string[]>(s.eligibleCountries, []).join(', ') || 'Worldwide' },
+                  ].map((row) => (
+                    <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800/50">
+                      <td className="p-4 font-medium text-stone-500 dark:text-stone-400">{row.label}</td>
+                      {selected.map((s) => (
+                        <td key={s.id} className="p-4 text-stone-800 dark:text-stone-200">{row.get(s)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="p-4 font-medium text-stone-500">Action</td>
+                    {selected.map((s) => (
+                      <td key={s.id} className="p-4">
+                        <Button size="sm" variant="outline" onClick={() => navigate('scholarship', s)}>
+                          View Details <ChevronRight className="ml-1 h-3 w-3" />
+                        </Button>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Picker grid */}
+      <h2 className="mb-4 text-lg font-bold text-stone-900 dark:text-stone-100">
+        {selected.length === 0 ? 'Select scholarships to compare' : 'Add more (or remove)'}
+      </h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {scholarships.map((s) => {
+          const isSelected = selected.find((x) => x.id === s.id)
+          return (
+            <Card
+              key={s.id}
+              onClick={() => toggleSelect(s)}
+              className={`cursor-pointer transition-all ${
+                isSelected
+                  ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-400'
+                  : 'border-stone-200 dark:border-stone-800 hover:border-amber-300'
+              }`}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm leading-tight">{s.title}</CardTitle>
+                    <div className="mt-0.5 text-xs text-stone-500">{s.provider}</div>
+                  </div>
+                  {isSelected ? (
+                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-amber-600" />
+                  ) : (
+                    <Plus className="h-5 w-5 flex-shrink-0 text-stone-300" />
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-xs">{levelLabel(s.level)}</Badge>
+                  <Badge variant="outline" className="text-xs">{fundingTypeLabel(s.fundingType)}</Badge>
+                  {s.amount && <Badge variant="outline" className="text-xs">{formatMoney(s.amount)}/yr</Badge>}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// v2: CALENDAR VIEW (deadline calendar)
+// ============================================================
+function CalendarView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const [scholarships, setScholarships] = useState<Scholarship[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  useEffect(() => {
+    fetch('/api/scholarships')
+      .then((r) => r.json())
+      .then((d) => { setScholarships(d.scholarships); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  if (loading) return <LoadingState label="Loading calendar..." />
+
+  const year = currentMonth.getFullYear()
+  const month = currentMonth.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
+  const startWeekday = firstDay.getDay() // 0 = Sunday
+
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  // Scholarships with deadlines in this month
+  const deadlinesThisMonth = scholarships.filter((s) => {
+    if (!s.deadline) return false
+    const d = new Date(s.deadline)
+    return d.getFullYear() === year && d.getMonth() === month
+  })
+
+  const getDeadlinesForDay = (day: number) => {
+    return deadlinesThisMonth.filter((s) => {
+      if (!s.deadline) return false
+      return new Date(s.deadline).getDate() === day
+    })
+  }
+
+  const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1))
+  const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1))
+  const goToday = () => setCurrentMonth(new Date())
+
+  const today = new Date()
+  const isToday = (day: number) =>
+    today.getFullYear() === year && today.getMonth() === month && today.getDate() === day
+
+  // Upcoming deadlines (next 90 days)
+  const now = new Date()
+  const future90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
+  const upcoming = scholarships
+    .filter((s) => s.deadline && new Date(s.deadline) >= now && new Date(s.deadline) <= future90)
+    .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Badge className="mb-3 bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+          <Calendar className="mr-1 h-3 w-3" /> Deadline Calendar
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Deadline Calendar</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">Visual month view of all scholarship deadlines.</p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Calendar */}
+        <div className="lg:col-span-2">
+          <Card className="border-stone-200 dark:border-stone-800">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{monthName}</CardTitle>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="sm" onClick={goToday}>Today</Button>
+                  <Button variant="ghost" size="sm" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                  <div key={d} className="text-center text-xs font-semibold text-stone-500 py-2">{d}</div>
+                ))}
+              </div>
+              {/* Days */}
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: startWeekday }).map((_, i) => (
+                  <div key={`empty-${i}`} className="aspect-square" />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1
+                  const dayDeadlines = getDeadlinesForDay(day)
+                  const today_ = isToday(day)
+                  return (
+                    <div
+                      key={day}
+                      className={`aspect-square rounded-lg border p-1.5 overflow-hidden ${
+                        today_
+                          ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30'
+                          : 'border-stone-100 dark:border-stone-800'
+                      }`}
+                    >
+                      <div className={`text-xs font-medium ${today_ ? 'text-amber-700 dark:text-amber-300' : 'text-stone-500'}`}>
+                        {day}
+                      </div>
+                      <div className="mt-0.5 space-y-0.5">
+                        {dayDeadlines.slice(0, 2).map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => navigate('scholarship', s)}
+                            className="block w-full truncate rounded bg-rose-100 px-1 py-0.5 text-[10px] text-rose-700 hover:bg-rose-200 dark:bg-rose-900/40 dark:text-rose-200"
+                            title={s.title}
+                          >
+                            {s.title}
+                          </button>
+                        ))}
+                        {dayDeadlines.length > 2 && (
+                          <div className="text-[10px] text-stone-400">+{dayDeadlines.length - 2} more</div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Upcoming list */}
+        <div>
+          <Card className="border-stone-200 dark:border-stone-800">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-rose-500" />
+                Next 90 Days
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcoming.length === 0 ? (
+                <p className="text-sm text-stone-500">No deadlines in the next 90 days.</p>
+              ) : (
+                <ScrollArea className="max-h-[500px] -mx-2 px-2">
+                  <div className="space-y-2">
+                    {upcoming.map((s) => {
+                      const days = daysUntil(s.deadline)
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => navigate('scholarship', s)}
+                          className="w-full text-left rounded-lg border border-stone-200 dark:border-stone-800 p-3 hover:bg-stone-50 dark:hover:bg-stone-900/50"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">{s.title}</div>
+                              <div className="text-xs text-stone-500">{s.provider}</div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className={`text-sm font-bold ${days! < 14 ? 'text-rose-600' : 'text-stone-700 dark:text-stone-300'}`}>{days}d</div>
+                              <div className="text-xs text-stone-500">{formatDate(s.deadline)}</div>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// v2: ANALYTICS VIEW (charts)
+// ============================================================
+function AnalyticsView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const [data, setData] = useState<any>(null)
+  const [scholarships, setScholarships] = useState<Scholarship[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/dashboard').then((r) => r.json()),
+      fetch('/api/scholarships').then((r) => r.json()),
+    ])
+      .then(([d, s]) => { setData(d); setScholarships(s.scholarships) })
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <LoadingState label="Loading analytics..." />
+  if (!data) return null
+
+  const { applications, savedScholarships, essays, stats } = data
+
+  // Compute status distribution
+  const statusCounts: Record<string, number> = {}
+  applications.forEach((a: Application) => {
+    statusCounts[a.status] = (statusCounts[a.status] || 0) + 1
+  })
+  const statusData = Object.entries(statusCounts).map(([status, count]) => ({ status: status.replace('_', ' '), count }))
+
+  // Match score distribution (from applications)
+  const matchScores = applications
+    .filter((a: Application) => a.matchScore)
+    .map((a: Application) => a.matchScore)
+
+  // Scholarship database analytics
+  const byFundingType: Record<string, number> = {}
+  scholarships.forEach((s) => {
+    byFundingType[s.fundingType] = (byFundingType[s.fundingType] || 0) + 1
+  })
+  const fundingData = Object.entries(byFundingType).map(([type, count]) => ({ type: fundingTypeLabel(type), count }))
+
+  const byLevel: Record<string, number> = {}
+  scholarships.forEach((s) => {
+    byLevel[s.level] = (byLevel[s.level] || 0) + 1
+  })
+  const levelData = Object.entries(byLevel).map(([level, count]) => ({ level: levelLabel(level), count }))
+
+  const byFundedBy: Record<string, number> = {}
+  scholarships.forEach((s) => {
+    if (s.fundedBy) byFundedBy[s.fundedBy] = (byFundedBy[s.fundedBy] || 0) + 1
+  })
+  const fundedByData = Object.entries(byFundedBy)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+
+  // Deadline distribution by month
+  const byMonth: Record<string, number> = {}
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  scholarships.forEach((s) => {
+    if (s.deadline) {
+      const m = new Date(s.deadline).getMonth()
+      byMonth[monthNames[m]] = (byMonth[monthNames[m]] || 0) + 1
+    }
+  })
+  const monthData = monthNames.map((m) => ({ month: m, count: byMonth[m] || 0 }))
+
+  const CHART_COLORS = ['#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#EF4444']
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Badge className="mb-3 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+          <TrendingUp className="mr-1 h-3 w-3" /> Analytics
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Analytics Dashboard</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">Insights from your applications and the scholarship database.</p>
+      </div>
+
+      {/* Stat cards */}
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="Total Apps" value={stats.totalApplications} icon={Target} color="text-violet-600 bg-violet-50 dark:bg-violet-950/40" sub="in tracker" />
+        <StatCard label="Avg Match" value={`${matchScores.length ? Math.round(matchScores.reduce((a: number, b: number) => a + b, 0) / matchScores.length) : 0}%`} icon={Sparkles} color="text-amber-600 bg-amber-50 dark:bg-amber-950/40" sub="across apps" />
+        <StatCard label="Saved" value={stats.totalSaved} icon={Bookmark} color="text-rose-600 bg-rose-50 dark:bg-rose-950/40" sub="scholarships" />
+        <StatCard label="Database" value={scholarships.length} icon={Award} color="text-sky-600 bg-sky-50 dark:bg-sky-950/40" sub="total scholarships" />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Application status pie */}
+        {statusData.length > 0 && (
+          <Card className="border-stone-200 dark:border-stone-800">
+            <CardHeader><CardTitle className="text-base">Application Status Breakdown</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <RechartsPieChart>
+                  <RechartsPie
+                    data={statusData}
+                    dataKey="count"
+                    nameKey="status"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={90}
+                    label={({ status, count }: any) => `${status}: ${count}`}
+                  >
+                    {statusData.map((_, i) => (
+                      <RechartsCell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </RechartsPie>
+                  <RechartsTooltip />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Funding type bar */}
+        <Card className="border-stone-200 dark:border-stone-800">
+          <CardHeader><CardTitle className="text-base">Scholarships by Funding Type</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <RechartsBarChart data={fundingData}>
+                <RechartsXAxis dataKey="type" tick={{ fontSize: 11 }} />
+                <RechartsYAxis tick={{ fontSize: 11 }} />
+                <RechartsTooltip />
+                <RechartsBar dataKey="count" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Level distribution */}
+        <Card className="border-stone-200 dark:border-stone-800">
+          <CardHeader><CardTitle className="text-base">Scholarships by Education Level</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <RechartsBarChart data={levelData} layout="vertical">
+                <RechartsXAxis type="number" tick={{ fontSize: 11 }} />
+                <RechartsYAxis type="category" dataKey="level" tick={{ fontSize: 11 }} width={80} />
+                <RechartsTooltip />
+                <RechartsBar dataKey="count" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Deadline distribution by month */}
+        <Card className="border-stone-200 dark:border-stone-800">
+          <CardHeader><CardTitle className="text-base">Deadlines by Month</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <RechartsBarChart data={monthData}>
+                <RechartsXAxis dataKey="month" tick={{ fontSize: 11 }} />
+                <RechartsYAxis tick={{ fontSize: 11 }} />
+                <RechartsTooltip />
+                <RechartsBar dataKey="count" fill="#10B981" radius={[4, 4, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Funded-by country ranking */}
+      <Card className="mt-6 border-stone-200 dark:border-stone-800">
+        <CardHeader><CardTitle className="text-base">Top Funding Countries</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {fundedByData.map((c, i) => {
+              const max = fundedByData[0].count
+              return (
+                <div key={c.country} className="flex items-center gap-3">
+                  <div className="w-6 text-xs font-mono text-stone-400">#{i + 1}</div>
+                  <div className="w-32 text-sm font-medium text-stone-900 dark:text-stone-100">{c.country}</div>
+                  <div className="flex-1">
+                    <div className="h-6 rounded bg-stone-100 dark:bg-stone-800 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded transition-all"
+                        style={{ width: `${(c.count / max) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="w-8 text-right text-sm font-bold text-stone-900 dark:text-stone-100">{c.count}</div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ============================================================
+// v2: PROFILE EDITOR VIEW
+// ============================================================
+function ProfileView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    fullName: '',
+    bio: '',
+    country: '',
+    city: '',
+    educationLevel: 'undergraduate',
+    currentSchool: '',
+    fieldOfStudy: '',
+    gpa: '' as string | number,
+    graduationYear: '' as string | number,
+    targetCountries: '',
+    targetDegree: 'masters',
+    targetField: '',
+    financialNeed: 'high',
+    budget: '' as string | number,
+    languages: '',
+  })
+
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then((r) => r.json())
+      .then((d) => {
+        const p = d.user.profile
+        setProfile(p)
+        if (p) {
+          setForm({
+            fullName: p.fullName || '',
+            bio: p.bio || '',
+            country: p.country || '',
+            city: p.city || '',
+            educationLevel: p.educationLevel || 'undergraduate',
+            currentSchool: p.currentSchool || '',
+            fieldOfStudy: p.fieldOfStudy || '',
+            gpa: p.gpa ?? '',
+            graduationYear: p.graduationYear ?? '',
+            targetCountries: parseJSON<string[]>(p.targetCountries, []).join(', '),
+            targetDegree: p.targetDegree || 'masters',
+            targetField: p.targetField || '',
+            financialNeed: p.financialNeed || 'high',
+            budget: p.budget ?? '',
+            languages: parseJSON<string[]>(p.languages, []).join(', '),
+          })
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const payload = {
+        fullName: form.fullName || undefined,
+        bio: form.bio || undefined,
+        country: form.country || undefined,
+        city: form.city || undefined,
+        educationLevel: form.educationLevel || undefined,
+        currentSchool: form.currentSchool || undefined,
+        fieldOfStudy: form.fieldOfStudy || undefined,
+        gpa: form.gpa === '' ? null : Number(form.gpa),
+        graduationYear: form.graduationYear === '' ? null : Number(form.graduationYear),
+        targetCountries: form.targetCountries.split(',').map((s) => s.trim()).filter(Boolean),
+        targetDegree: form.targetDegree || undefined,
+        targetField: form.targetField || undefined,
+        financialNeed: form.financialNeed || undefined,
+        budget: form.budget === '' ? null : Number(form.budget),
+        languages: form.languages.split(',').map((s) => s.trim()).filter(Boolean),
+      }
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Failed to save')
+      toast({ title: 'Profile updated', description: 'Your changes have been saved.' })
+    } catch (e: any) {
+      toast({ title: 'Save failed', description: e.message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <LoadingState label="Loading profile..." />
+
+  const completion = profile ? (() => {
+    const fields = [form.fullName, form.country, form.city, form.educationLevel, form.currentSchool, form.fieldOfStudy, form.gpa, form.graduationYear, form.targetCountries, form.targetDegree, form.targetField, form.financialNeed, form.languages, form.bio]
+    return Math.round(fields.filter((f) => f !== '' && f !== null && f !== undefined).length / fields.length * 100)
+  })() : 0
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <Badge className="mb-3 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+          <Edit3 className="mr-1 h-3 w-3" /> Profile Editor
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Your Profile</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">
+          A complete profile gets 35% more accurate AI match scores. Currently {completion}% complete.
+        </p>
+        <Progress value={completion} className="mt-3 h-2" />
+      </div>
+
+      <Card className="border-stone-200 dark:border-stone-800">
+        <CardHeader><CardTitle className="text-base">Personal Information</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Full Name</Label>
+              <Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Abdi Megersa" />
+            </div>
+            <div>
+              <Label>Country</Label>
+              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="Ethiopia" />
+            </div>
+            <div>
+              <Label>City</Label>
+              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="Addis Ababa" />
+            </div>
+            <div>
+              <Label>Languages (comma-separated)</Label>
+              <Input value={form.languages} onChange={(e) => setForm({ ...form, languages: e.target.value })} placeholder="Amharic, English" />
+            </div>
+          </div>
+          <div>
+            <Label>Bio</Label>
+            <Textarea
+              value={form.bio}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              placeholder="Brief bio — your background, interests, what drives you..."
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-stone-200 dark:border-stone-800">
+        <CardHeader><CardTitle className="text-base">Academic Background</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Education Level</Label>
+              <Select value={form.educationLevel} onValueChange={(v) => setForm({ ...form, educationLevel: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high_school">High School</SelectItem>
+                  <SelectItem value="undergraduate">Undergraduate</SelectItem>
+                  <SelectItem value="masters">Master's</SelectItem>
+                  <SelectItem value="phd">PhD</SelectItem>
+                  <SelectItem value="postdoc">Postdoc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Current School</Label>
+              <Input value={form.currentSchool} onChange={(e) => setForm({ ...form, currentSchool: e.target.value })} placeholder="Addis Ababa University" />
+            </div>
+            <div>
+              <Label>Field of Study</Label>
+              <Input value={form.fieldOfStudy} onChange={(e) => setForm({ ...form, fieldOfStudy: e.target.value })} placeholder="Computer Science" />
+            </div>
+            <div>
+              <Label>GPA (4.0 scale)</Label>
+              <Input type="number" step="0.1" min="0" max="4" value={form.gpa} onChange={(e) => setForm({ ...form, gpa: e.target.value })} placeholder="3.7" />
+            </div>
+            <div>
+              <Label>Graduation Year</Label>
+              <Input type="number" value={form.graduationYear} onChange={(e) => setForm({ ...form, graduationYear: e.target.value })} placeholder="2026" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-stone-200 dark:border-stone-800">
+        <CardHeader><CardTitle className="text-base">Target Programs</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Target Degree</Label>
+              <Select value={form.targetDegree} onValueChange={(v) => setForm({ ...form, targetDegree: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bachelors">Bachelor's</SelectItem>
+                  <SelectItem value="masters">Master's</SelectItem>
+                  <SelectItem value="phd">PhD</SelectItem>
+                  <SelectItem value="postdoc">Postdoc</SelectItem>
+                  <SelectItem value="research">Research</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Target Field</Label>
+              <Input value={form.targetField} onChange={(e) => setForm({ ...form, targetField: e.target.value })} placeholder="Computer Science" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Target Countries (comma-separated)</Label>
+              <Input value={form.targetCountries} onChange={(e) => setForm({ ...form, targetCountries: e.target.value })} placeholder="USA, UK, Germany, Canada" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4 border-stone-200 dark:border-stone-800">
+        <CardHeader><CardTitle className="text-base">Financial Information</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label>Financial Need</Label>
+              <Select value={form.financialNeed} onValueChange={(v) => setForm({ ...form, financialNeed: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low — can self-fund</SelectItem>
+                  <SelectItem value="medium">Medium — partial aid needed</SelectItem>
+                  <SelectItem value="high">High — mostly funded needed</SelectItem>
+                  <SelectItem value="full">Full — 100% funding required</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Family Budget (USD/year)</Label>
+              <Input type="number" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} placeholder="5000" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <Button variant="outline" onClick={() => navigate('dashboard')}>Cancel</Button>
+        <Button
+          onClick={save}
+          disabled={saving}
+          className="bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700"
+        >
+          {saving ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+          ) : (
+            <><CheckCircle2 className="mr-2 h-4 w-4" /> Save Profile</>
+          )}
+        </Button>
       </div>
     </div>
   )

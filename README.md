@@ -4,16 +4,18 @@
 
 ### AI-Powered Scholarship Discovery & Application Platform for African Students
 
+[![Version](https://img.shields.io/badge/version-2.0-amber.svg)](#-whats-new-in-v2)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-6-indigo.svg)](https://www.prisma.io/)
 [![AI](https://img.shields.io/badge/AI-z--ai--sdk-orange.svg)](https://www.npmjs.com/package/z-ai-web-dev-sdk)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4.svg)](https://tailwindcss.com/)
+[![Dark Mode](https://img.shields.io/badge/Dark%20Mode-✓-9B59B6.svg)](#-design-system)
 
-**Find your match. Write better essays. Track every deadline. Get funded.**
+**5 AI tools · 24 scholarships · Dark mode · Mock interviews · Analytics · PWA**
 
-[Features](#-features) · [Screenshots](#-screenshots) · [Architecture](#-architecture) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [AI Design](#-ai-design)
+[Features](#-features) · [What's New in v2](#-whats-new-in-v2) · [Screenshots](#-screenshots) · [Architecture](#-architecture) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started)
 
 </div>
 
@@ -22,6 +24,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [What's New in v2](#-whats-new-in-v2)
 - [Features](#-features)
 - [Screenshots](#-screenshots)
 - [Architecture](#-architecture)
@@ -38,9 +41,76 @@
 
 ---
 
+## 🆕 What's New in v2
+
+Version 2.0 adds **5 major features** on top of the v1 foundation:
+
+### 1. 🌙 Dark Mode
+- Full dark theme with `next-themes`
+- Theme toggle in navigation (sun/moon icon)
+- Smart CSS overrides let all v1 stone-palette components automatically adapt
+- Custom dark scrollbar styling
+- Respects system preference (`prefers-color-scheme`)
+- Smooth 0.2s background transitions
+
+### 2. 🎤 AI Mock Interviewer (5th AI tool)
+A completely new AI-powered feature that simulates a real scholarship interview:
+- **Realistic panelist behavior** — trained on Chevening, Fulbright, Rhodes interview patterns
+- **Multi-turn conversation** — the AI asks a question, you answer, it gives feedback + asks a harder follow-up
+- **Per-answer scoring** (0-100) with strengths, improvements, and category tags
+- **Score history bar chart** — see your performance across the interview
+- **Interview plan** — the AI reveals its planned topics (5-6 questions)
+- **Final readiness summary** — comprehensive assessment after the last question
+- **⌘+Enter** to submit answers quickly
+- New API: `POST /api/ai/interview` with `start` and `answer` actions
+
+### 3. 📊 Scholarship Comparison Tool
+- Select up to **3 scholarships** to compare side-by-side
+- **12 attributes** compared: level, funding, amount, host countries, fields, duration, deadline, days left, competitiveness, coverage, funded by, eligible countries
+- Visual selection state (amber ring + checkmark on selected cards)
+- Click any column header to jump to the scholarship detail
+- Smart auto-replace when selecting a 4th (keeps last 2 + new)
+
+### 4. 📅 Deadline Calendar
+- **Visual month grid** with all scholarship deadlines plotted
+- Navigate months (prev/next/today)
+- Today's date highlighted in amber
+- Click any deadline to jump to the scholarship detail
+- "Next 90 Days" sidebar with sorted upcoming deadlines
+- Color-coded urgency (< 14 days = red)
+
+### 5. 📈 Analytics Dashboard
+Charts powered by **Recharts**:
+- **Application Status** pie chart (breakdown by stage)
+- **Scholarships by Funding Type** bar chart
+- **Scholarships by Education Level** horizontal bar chart
+- **Deadlines by Month** bar chart (seasonality insights)
+- **Top Funding Countries** ranked bar list
+- Summary stats: total apps, average match score, saved count, database size
+
+### 6. ✏️ Profile Editor
+- Full CRUD on student profile (was read-only in v1)
+- **4 sections**: Personal, Academic, Target Programs, Financial
+- **Live completion %** progress bar
+- Real-time validation + toast feedback
+- Smart array handling (comma-separated → JSON arrays for SQLite)
+- "Complete now" button on dashboard links to editor
+
+### 7. 📱 PWA Support
+- `manifest.webmanifest` for installability
+- Theme color metadata
+- Standalone display mode
+- Installable on mobile/desktop
+
+### Navigation Update
+Main nav expanded from 8 → **12 items**:
+Dashboard · Scholarships · AI Matcher · Essay Lab · **Mock Interview** · **Compare** · Tracker · **Calendar** · **Analytics** · Documents · Resources · Rec Letters
+
+---
+
 ## 🎯 Overview
 
-ScholarTrack Africa is a comprehensive, AI-powered platform that helps African students navigate the complex world of international scholarships. Built from the ground up with a **student-first philosophy**, it combines a curated database of 24 real scholarships with four AI-powered tools that cover the entire application lifecycle — from discovery to submission.
+ScholarTrack Africa is a comprehensive, AI-powered platform that helps African students navigate the complex world of international scholarships. Built from the ground up with a **student-first philosophy**, it combines a curated database of 24 real scholarships with **five AI-powered tools** that cover the entire application lifecycle — from discovery to interview prep.
 
 ### What makes it different
 
@@ -57,7 +127,7 @@ ScholarTrack Africa is a comprehensive, AI-powered platform that helps African s
 
 ## ✨ Features
 
-### 🤖 Four AI-Powered Tools
+### 🤖 Five AI-Powered Tools
 
 #### 1. Scholarship Matcher
 Analyzes the student's profile (country, field, GPA, target countries, financial need, languages) against every scholarship in the database and ranks them by fit. Each match includes:
@@ -89,6 +159,15 @@ Generate professional, evidence-based letter drafts:
 - Inputs: student name, recommender info, relationship, target program, key points, specific examples, tone, length
 - Output: full letter draft ready for recommender review
 - Supports 4 tones (academic, professional, warm, formal) and 3 lengths (concise, standard, detailed)
+
+#### 5. AI Mock Interviewer (v2)
+Simulates a real scholarship interview with an AI panelist:
+- **Realistic opening** — generates a warm greeting + a challenging first question tailored to the student's profile
+- **Multi-turn conversation** — 5-6 questions covering personal background, academic, leadership, scholarship fit, current affairs, future vision, behavioral
+- **Per-answer feedback** — score (0-100), strengths, improvements, and a harder follow-up question
+- **Score history chart** — visual bar chart of scores across all answers
+- **Final readiness assessment** — comprehensive summary when the interview concludes
+- New API: `POST /api/ai/interview` with `start` and `answer` actions
 
 ### 📚 Scholarship Database
 
@@ -238,6 +317,50 @@ Verdict (yes/likely/uncertain/no), confidence %, summary, criterion-by-criterion
 
 ---
 
+### v2 Screenshots
+
+#### Landing Page — Dark Mode
+Full dark theme with amber accents. Toggleable via the sun/moon icon in the nav.
+
+![Landing Dark Mode](public/screenshots/v2-02-landing-dark.png)
+
+#### Dashboard — Dark Mode
+Dashboard with all stats, applications, and activity feed rendered in dark theme.
+
+![Dashboard Dark Mode](public/screenshots/v2-10-dashboard-dark.png)
+
+#### AI Mock Interview — Setup
+Configure the mock interview: select scholarship, provider, optional program and university.
+
+![Mock Interview Setup](public/screenshots/v2-03-interview-setup.png)
+
+#### AI Mock Interview — In Progress
+Multi-turn conversation with the AI panelist. Feedback sidebar shows latest score, strengths, and improvements. Score history bar chart tracks performance across answers.
+
+![Mock Interview In Progress](public/screenshots/v2-05-interview-feedback.png)
+
+#### Scholarship Comparison Tool
+Select up to 3 scholarships and compare 12 attributes side-by-side.
+
+![Compare Scholarships](public/screenshots/v2-06-compare.png)
+
+#### Deadline Calendar
+Visual month grid with all scholarship deadlines plotted. Click any deadline to jump to the scholarship detail. "Next 90 Days" sidebar shows upcoming deadlines sorted by urgency.
+
+![Deadline Calendar](public/screenshots/v2-07-calendar.png)
+
+#### Analytics Dashboard
+5 charts powered by Recharts: application status pie, funding type bar, education level horizontal bar, deadlines by month, and top funding countries ranked list.
+
+![Analytics Dashboard](public/screenshots/v2-08-analytics.png)
+
+#### Profile Editor
+Full CRUD on student profile with 4 sections (Personal, Academic, Target Programs, Financial). Live completion % progress bar.
+
+![Profile Editor](public/screenshots/v2-09-profile-editor.png)
+
+---
+
 ## 🏗 Architecture
 
 ### High-Level Diagram
@@ -323,8 +446,10 @@ sequenceDiagram
 | **Language** | TypeScript 5 (strict) | Type safety end-to-end |
 | **Styling** | Tailwind CSS 4 + shadcn/ui (New York) | Utility-first, accessible components |
 | **Database** | Prisma 6 ORM + SQLite | Type-safe queries, swappable to Postgres |
-| **AI** | z-ai-web-dev-sdk | LLM for matching, essays, eligibility, rec letters |
+| **AI** | z-ai-web-dev-sdk | LLM for matching, essays, eligibility, rec letters, interviews |
 | **Animation** | Framer Motion 12 | View transitions, micro-interactions |
+| **Charts** | Recharts | Analytics dashboard visualizations |
+| **Theming** | next-themes | Dark mode with system preference detection |
 | **Icons** | Lucide React | Consistent, tree-shakeable |
 | **Validation** | Zod 4 | Runtime type checking on all API inputs |
 | **State** | React hooks (useState, useEffect, useMemo, useCallback) | No global state library needed |
@@ -569,6 +694,7 @@ SQLite is used for dev. To migrate to Postgres, change the `datasource` in `sche
 | `POST` | `/api/ai/essay` | Analyze essay draft + provide rewrite |
 | `POST` | `/api/ai/eligibility` | Check eligibility for a specific scholarship |
 | `POST` | `/api/ai/rec-letter` | Generate recommendation letter draft |
+| `POST` | `/api/ai/interview` | Start/continue AI mock interview (v2) |
 
 ### Data Routes
 
@@ -762,7 +888,7 @@ For the demo profile (Ethiopian CS undergrad, GPA 3.7, targeting master's in USA
 
 ## 🗺 Roadmap
 
-### v1.0 (Current — Shipped)
+### v1.0 (Shipped)
 - [x] 4 AI tools (matcher, essay lab, eligibility, rec letter)
 - [x] 24 real scholarships seeded
 - [x] 6 in-depth resources
@@ -773,22 +899,29 @@ For the demo profile (Ethiopian CS undergrad, GPA 3.7, targeting master's in USA
 - [x] Loading skeletons
 - [x] Toast notifications on all actions
 
-### v1.1 (Next)
+### v2.0 (Current — Shipped)
+- [x] Dark mode (next-themes)
+- [x] AI Mock Interviewer (5th AI tool)
+- [x] Scholarship comparison tool (up to 3 side-by-side)
+- [x] Deadline calendar (visual month grid)
+- [x] Analytics dashboard (5 Recharts visualizations)
+- [x] Profile editor (full CRUD)
+- [x] PWA manifest (installable)
+
+### v2.1 (Next)
 - [ ] Real authentication (NextAuth + GitHub/Google providers)
-- [ ] Profile editor modal
 - [ ] Document upload (S3/Cloudflare R2)
 - [ ] Email deadline reminders (cron job)
-- [ ] Dark mode toggle
+- [ ] Voice-based mock interviews (TTS + ASR)
+- [ ] Expand scholarship database to 50+
 
-### v2.0 (Future)
+### v3.0 (Future)
 - [ ] Migrate to Postgres for production
 - [ ] Deploy to Vercel
-- [ ] Expand scholarship database to 100+
 - [ ] Community features (forum, mentorship matching)
 - [ ] Multi-language support (French, Portuguese, Arabic)
 - [ ] Mobile app (React Native)
 - [ ] AI-powered deadline calendar sync (Google Calendar, Apple Calendar)
-- [ ] Interview prep with AI mock interviewer (voice)
 
 ---
 
