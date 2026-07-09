@@ -14,24 +14,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
-  icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
-  },
+  title: "ScholarTrack Africa — AI-Powered Scholarships for African Students",
+  description:
+    "Find, evaluate, and apply to international scholarships with AI-powered matching, essay coaching, eligibility checks, and a complete application tracker. Built for African students.",
+  keywords: [
+    "scholarships for African students",
+    "Mastercard Foundation",
+    "Chevening",
+    "Fulbright",
+    "DAAD",
+    "Rhodes Scholarship",
+    "AI scholarship matcher",
+    "SOP writing",
+    "graduate school applications",
+    "Africa education",
+  ],
+  authors: [{ name: "Hope0351" }],
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "ScholarTrack Africa",
+    description: "AI-powered scholarship platform for African students.",
+    url: "https://github.com/Hope0351/scholartrack",
+    siteName: "ScholarTrack Africa",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "ScholarTrack Africa",
+    description: "AI-powered scholarship platform for African students.",
   },
 };
 

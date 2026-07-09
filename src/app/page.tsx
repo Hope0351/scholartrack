@@ -36,6 +36,10 @@ import {
 } from '@/components/ui/tooltip'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Sheet as MobileSheet,
+} from '@/components/ui/sheet'
 import {
   parseJSON, daysUntil, formatMoney, formatDate, scoreColor, statusColor,
   competitivenessColor, fundingTypeLabel, levelLabel,
@@ -154,6 +158,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       <TopNav view={view} navigate={navigate} onMobileMenu={() => setMobileNavOpen(true)} />
+      <MobileNavSheet
+        open={mobileNavOpen}
+        onOpenChange={setMobileNavOpen}
+        view={view}
+        navigate={navigate}
+      />
       <AnimatePresence mode="wait">
         <motion.main
           key={view}
@@ -199,7 +209,9 @@ function TopNav({
     { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
     { v: 'essay', label: 'Essay Lab', icon: PenLine },
     { v: 'tracker', label: 'Tracker', icon: Target },
+    { v: 'documents', label: 'Documents', icon: FolderOpen },
     { v: 'resources', label: 'Resources', icon: BookOpen },
+    { v: 'recletter', label: 'Rec Letters', icon: Bot },
   ]
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md">
@@ -214,7 +226,7 @@ function TopNav({
           </div>
         </button>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-0.5 xl:flex">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = view === item.v
@@ -222,13 +234,14 @@ function TopNav({
               <button
                 key={item.v}
                 onClick={() => navigate(item.v)}
-                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+                title={item.label}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors ${
                   active
                     ? 'bg-amber-100 text-amber-900'
                     : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {item.label}
               </button>
             )
@@ -247,7 +260,7 @@ function TopNav({
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="xl:hidden"
             onClick={onMobileMenu}
           >
             <Menu className="h-5 w-5" />
@@ -255,6 +268,58 @@ function TopNav({
         </div>
       </div>
     </header>
+  )
+}
+
+// ============================================================
+// MOBILE NAV SHEET
+// ============================================================
+function MobileNavSheet({
+  open, onOpenChange, view, navigate,
+}: { open: boolean; onOpenChange: (o: boolean) => void; view: View; navigate: (v: View, s?: Scholarship) => void }) {
+  const navItems: { v: View; label: string; icon: any }[] = [
+    { v: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { v: 'browse', label: 'Browse Scholarships', icon: Award },
+    { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
+    { v: 'essay', label: 'Essay Lab', icon: PenLine },
+    { v: 'tracker', label: 'Application Tracker', icon: Target },
+    { v: 'documents', label: 'Document Vault', icon: FolderOpen },
+    { v: 'resources', label: 'Resources Library', icon: BookOpen },
+    { v: 'recletter', label: 'Rec Letter Drafter', icon: Bot },
+  ]
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-80">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <div className="relative h-7 w-7 overflow-hidden rounded-lg bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600">
+              <GraduationCap className="absolute inset-0 m-auto h-4 w-4 text-white" strokeWidth={2.5} />
+            </div>
+            ScholarTrack
+          </SheetTitle>
+        </SheetHeader>
+        <nav className="mt-6 flex flex-col gap-1">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = view === item.v
+            return (
+              <button
+                key={item.v}
+                onClick={() => navigate(item.v)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-amber-100 text-amber-900'
+                    : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </button>
+            )
+          })}
+        </nav>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -923,6 +988,81 @@ function LoadingState({ label = 'Loading...' }: { label?: string }) {
   )
 }
 
+// Skeleton grid for browse view
+function BrowseSkeleton() {
+  return (
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="border-stone-200">
+          <CardHeader>
+            <div className="flex gap-1.5">
+              <div className="h-5 w-16 animate-pulse rounded-full bg-stone-200" />
+              <div className="h-5 w-20 animate-pulse rounded-full bg-stone-200" />
+            </div>
+            <div className="h-5 w-3/4 animate-pulse rounded bg-stone-200" />
+            <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="h-3 w-full animate-pulse rounded bg-stone-100" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-stone-100" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-stone-100" />
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <div className="h-2.5 w-1/3 animate-pulse rounded bg-stone-100" />
+              <div className="h-2.5 w-2/5 animate-pulse rounded bg-stone-100" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+// Dashboard skeleton
+function DashboardSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8 flex justify-between">
+        <div className="space-y-2">
+          <div className="h-7 w-64 animate-pulse rounded bg-stone-200" />
+          <div className="h-4 w-48 animate-pulse rounded bg-stone-100" />
+        </div>
+        <div className="h-10 w-32 animate-pulse rounded-lg bg-stone-200" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="border-stone-200">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 animate-pulse rounded-lg bg-stone-200" />
+                <div className="space-y-1.5">
+                  <div className="h-6 w-12 animate-pulse rounded bg-stone-200" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-stone-100" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card><CardContent className="py-6 space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-lg bg-stone-100" />
+            ))}
+          </CardContent></Card>
+        </div>
+        <Card><CardContent className="py-6 space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded bg-stone-100" />
+          ))}
+        </CardContent></Card>
+      </div>
+    </div>
+  )
+}
+
 // ============================================================
 // BROWSE VIEW
 // ============================================================
@@ -1019,7 +1159,7 @@ function BrowseView({ navigate }: { navigate: (v: View, s?: Scholarship) => void
       </Card>
 
       {loading ? (
-        <LoadingState label="Loading scholarships..." />
+        <BrowseSkeleton />
       ) : sorted.length === 0 ? (
         <Card><CardContent className="py-12">
           <EmptyState icon={Award} title="No scholarships found" desc="Try adjusting your filters." />
@@ -1041,12 +1181,62 @@ function BrowseView({ navigate }: { navigate: (v: View, s?: Scholarship) => void
 function ScholarshipDetailView({
   scholarship: s, navigate,
 }: { scholarship: Scholarship; navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
   const hosts = parseJSON<string[]>(s.hostCountries, [])
   const fields = parseJSON<string[]>(s.fieldsOfStudy, [])
   const coverage = parseJSON<string[]>(s.coverage, [])
   const tags = parseJSON<string[]>(s.tags, [])
   const eligibleCountries = parseJSON<string[]>(s.eligibleCountries, [])
   const days = daysUntil(s.deadline)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [addedToTracker, setAddedToTracker] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/scholarships/${s.id}/save`)
+      .then((r) => r.json())
+      .then((d) => setSaved(d.saved))
+      .catch(() => {})
+  }, [s.id])
+
+  const toggleSave = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/scholarships/${s.id}/save`, { method: 'POST' })
+      const data = await res.json()
+      setSaved(data.saved)
+      toast({
+        title: data.saved ? 'Scholarship saved' : 'Scholarship removed',
+        description: data.saved
+          ? `${s.title} added to your saved list.`
+          : `${s.title} removed from your saved list.`,
+      })
+    } catch {
+      toast({ title: 'Failed to update', variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const addToTracker = async () => {
+    try {
+      const res = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholarshipId: s.id, status: 'interested' }),
+      })
+      const data = await res.json()
+      setAddedToTracker(true)
+      toast({
+        title: data.created ? 'Added to tracker' : 'Already in tracker',
+        description: data.created
+          ? `${s.title} added as "interested". Open tracker to update progress.`
+          : `This scholarship is already in your tracker.`,
+      })
+    } catch {
+      toast({ title: 'Failed to add to tracker', variant: 'destructive' })
+    }
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -1094,8 +1284,22 @@ function ScholarshipDetailView({
             <Button variant="outline" onClick={() => navigate('eligibility', s)}>
               <FileCheck className="mr-2 h-4 w-4" /> Check eligibility with AI
             </Button>
-            <Button variant="outline" onClick={() => navigate('tracker')}>
-              <Target className="mr-2 h-4 w-4" /> Track this application
+            <Button
+              variant="outline"
+              onClick={addToTracker}
+              disabled={addedToTracker}
+            >
+              <Target className="mr-2 h-4 w-4" />
+              {addedToTracker ? 'In tracker' : 'Add to tracker'}
+            </Button>
+            <Button
+              variant={saved ? 'default' : 'outline'}
+              onClick={toggleSave}
+              disabled={saving}
+              className={saved ? 'bg-rose-600 text-white hover:bg-rose-700' : ''}
+            >
+              {saved ? <BookmarkCheck className="mr-2 h-4 w-4" /> : <Bookmark className="mr-2 h-4 w-4" />}
+              {saved ? 'Saved' : 'Save'}
             </Button>
           </div>
         </CardContent>
@@ -1214,6 +1418,7 @@ function ScholarshipDetailView({
 // AI MATCHER VIEW
 // ============================================================
 function MatcherView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [matches, setMatches] = useState<Match[]>([])
   const [hasRun, setHasRun] = useState(false)
@@ -1256,8 +1461,15 @@ function MatcherView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
       const data = await response.json()
       setMatches(data.matches || [])
       setHasRun(true)
+      toast({
+        title: `Found ${(data.matches || []).length} matches`,
+        description: (data.matches || []).length > 0
+          ? `Top match: ${data.matches[0].scholarship.title} (${data.matches[0].score}% fit)`
+          : 'Try completing more of your profile for better matches.',
+      })
     } catch (e) {
       console.error(e)
+      toast({ title: 'Match failed', description: 'Please try again.', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -1370,6 +1582,17 @@ function ProfileField({ label, value }: { label: string; value: string | null | 
   )
 }
 
+// Fetch a full scholarship by ID and navigate to detail
+async function navigateToMatchScholarship(id: string, navigate: (v: View, s?: Scholarship) => void) {
+  try {
+    const res = await fetch(`/api/scholarships/${id}`)
+    const data = await res.json()
+    if (data.scholarship) navigate('scholarship', data.scholarship)
+  } catch (e) {
+    console.error('Failed to fetch scholarship', e)
+  }
+}
+
 function MatchCard({ match: m, navigate }: { match: Match; navigate: (v: View, s?: Scholarship) => void }) {
   const [expanded, setExpanded] = useState(false)
   const days = daysUntil(m.scholarship.deadline)
@@ -1391,8 +1614,8 @@ function MatchCard({ match: m, navigate }: { match: Match; navigate: (v: View, s
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <button
-                onClick={() => navigate('browse')}
-                className="text-base font-semibold text-stone-900 hover:text-amber-700"
+                onClick={() => navigateToMatchScholarship(m.scholarship.id, navigate)}
+                className="text-left text-base font-semibold text-stone-900 hover:text-amber-700"
               >
                 {m.scholarship.title}
               </button>
@@ -1458,6 +1681,7 @@ function MatchCard({ match: m, navigate }: { match: Match; navigate: (v: View, s
 // ESSAY LAB VIEW
 // ============================================================
 function EssayView() {
+  const { toast } = useToast()
   const [title, setTitle] = useState('')
   const [prompt, setPrompt] = useState('')
   const [content, setContent] = useState('')
@@ -1496,8 +1720,17 @@ function EssayView() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to analyze')
       setResult(data)
+      toast({
+        title: `Essay scored: ${data.score}/100`,
+        description: data.score >= 75
+          ? 'Strong essay — minor revisions needed.'
+          : data.score >= 60
+          ? 'Solid foundation — significant revision recommended.'
+          : 'Major rewrite recommended. Review suggestions below.',
+      })
     } catch (e: any) {
       setError(e.message || 'Failed to analyze essay')
+      toast({ title: 'Analysis failed', description: e.message, variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -1754,7 +1987,7 @@ function TrackerView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { refresh() }, [refresh])
 
-  if (loading) return <LoadingState label="Loading your applications..." />
+  if (loading) return <DashboardSkeleton />
   if (!data) return null
 
   const { applications } = data
@@ -2272,6 +2505,7 @@ function EligibilityView({
 // RECOMMENDATION LETTER VIEW
 // ============================================================
 function RecLetterView() {
+  const { toast } = useToast()
   const [form, setForm] = useState({
     studentName: '',
     recommenderName: '',
@@ -2323,8 +2557,13 @@ function RecLetterView() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to generate')
       setResult(data)
+      toast({
+        title: 'Letter drafted',
+        description: `${data.wordCount} words generated. Have your recommender review and edit on letterhead.`,
+      })
     } catch (e: any) {
       setError(e.message)
+      toast({ title: 'Generation failed', description: e.message, variant: 'destructive' })
     } finally {
       setLoading(false)
     }
