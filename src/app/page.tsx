@@ -41,6 +41,8 @@ import {
   Sheet as MobileSheet,
 } from '@/components/ui/sheet'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
 import {
   PieChart as RechartsPieChart, Pie as RechartsPie, Cell as RechartsCell,
   BarChart as RechartsBarChart, Bar as RechartsBar,
@@ -242,28 +244,27 @@ function ReminderBadge() {
 function TopNav({
   view, navigate, onMobileMenu,
 }: { view: View; navigate: (v: View, s?: Scholarship) => void; onMobileMenu: () => void }) {
+  const { t } = useLanguage()
   const navItems: { v: View; label: string; icon: any }[] = [
-    { v: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { v: 'feed', label: 'For You', icon: Heart },
-    { v: 'browse', label: 'Scholarships', icon: Award },
-    { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
-    { v: 'essay', label: 'Essay Lab', icon: PenLine },
-    { v: 'interview', label: 'Mock Interview', icon: MessageSquare },
-    { v: 'compare', label: 'Compare', icon: GitCompare },
-    { v: 'tracker', label: 'Tracker', icon: Target },
-    { v: 'calendar', label: 'Calendar', icon: Calendar },
-    { v: 'analytics', label: 'Analytics', icon: TrendingUp },
-    { v: 'documents', label: 'Documents', icon: FolderOpen },
-    { v: 'resources', label: 'Resources', icon: BookOpen },
-    { v: 'recletter', label: 'Rec Letters', icon: Bot },
+    { v: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
+    { v: 'feed', label: t('nav.feed'), icon: Heart },
+    { v: 'browse', label: t('nav.scholarships'), icon: Award },
+    { v: 'matcher', label: t('nav.matcher'), icon: Sparkles },
+    { v: 'essay', label: t('nav.essay'), icon: PenLine },
+    { v: 'interview', label: t('nav.interview'), icon: MessageSquare },
+    { v: 'compare', label: t('nav.compare'), icon: GitCompare },
+    { v: 'tracker', label: t('nav.tracker'), icon: Target },
+    { v: 'calendar', label: t('nav.calendar'), icon: Calendar },
+    { v: 'analytics', label: t('nav.analytics'), icon: TrendingUp },
+    { v: 'documents', label: t('nav.documents'), icon: FolderOpen },
+    { v: 'resources', label: t('nav.resources'), icon: BookOpen },
+    { v: 'recletter', label: t('nav.recletter'), icon: Bot },
   ]
   return (
     <header className="sticky top-0 z-40 w-full border-b border-stone-200/80 bg-stone-50/90 backdrop-blur-md dark:bg-stone-900/90 dark:border-stone-800">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <button onClick={() => navigate('landing')} className="flex items-center gap-2.5">
-          <div className="relative h-9 w-9 overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 shadow-sm">
-            <GraduationCap className="absolute inset-0 m-auto h-5 w-5 text-white" strokeWidth={2.5} />
-          </div>
+          <img src="/logo.svg" alt="ScholarTrack" className="h-9 w-9 rounded-xl shadow-sm" />
           <div className="flex flex-col items-start leading-none">
             <span className="text-base font-bold tracking-tight text-stone-900">ScholarTrack</span>
             <span className="text-[10px] font-medium uppercase tracking-wider text-amber-700">Africa</span>
@@ -293,6 +294,7 @@ function TopNav({
         </nav>
 
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -387,6 +389,7 @@ function MobileNavSheet({
 // LANDING VIEW
 // ============================================================
 function LandingView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const { t } = useLanguage()
   const [stats, setStats] = useState<{ scholarships: number; resources: number } | null>(null)
   const [featured, setFeatured] = useState<Scholarship[]>([])
 
@@ -414,18 +417,17 @@ function LandingView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-medium text-amber-200">
                 <Sparkles className="h-3.5 w-3.5" />
-                AI-Powered Scholarship Platform for African Students
+                {t('landing.badge')}
               </div>
               <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Your path to{' '}
+                {t('landing.heroTitle1')}{' '}
                 <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">
-                  world-class education
+                  {t('landing.heroTitle2')}
                 </span>{' '}
-                starts here.
+                {t('landing.heroTitle3')}
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone-300">
-                ScholarTrack curates {stats?.scholarships ?? 24}+ international scholarships, uses AI to match your profile
-                to the right opportunities, and guides you through every step — from essay to interview.
+                {t('landing.heroDesc')}
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-3">
                 <Button
@@ -434,7 +436,7 @@ function LandingView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
                   className="bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/20 hover:from-amber-600 hover:to-orange-600"
                 >
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Find My Scholarships
+                  {t('landing.findScholarships')}
                 </Button>
                 <Button
                   size="lg"
@@ -442,19 +444,19 @@ function LandingView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
                   onClick={() => navigate('browse')}
                   className="border-stone-600 bg-stone-900/40 text-white hover:bg-stone-800 hover:text-white"
                 >
-                  Browse All
+                  {t('landing.browseAll')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
               <div className="mt-12 flex flex-wrap gap-6 text-sm text-stone-400">
                 <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-emerald-400" /> Verified scholarships
+                  <Shield className="h-4 w-4 text-emerald-400" /> {t('landing.verified')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-amber-400" /> AI eligibility check
+                  <Bot className="h-4 w-4 text-amber-400" /> {t('landing.aiCheck')}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-rose-400" /> 15+ countries
+                  <Globe className="h-4 w-4 text-rose-400" /> {t('landing.countries')}
                 </div>
               </div>
             </div>
@@ -566,10 +568,10 @@ function LandingView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
           {/* Stats strip */}
           <div className="mt-20 grid grid-cols-2 gap-6 border-t border-stone-700/50 pt-10 sm:grid-cols-4">
             {[
-              { label: 'Scholarships', value: stats?.scholarships ?? '—', icon: Award },
-              { label: 'Host Countries', value: '15+', icon: Globe },
-              { label: 'Resources', value: stats?.resources ?? '—', icon: BookOpen },
-              { label: 'AI Tools', value: '4', icon: Bot },
+              { label: t('landing.scholarships'), value: stats?.scholarships ?? '—', icon: Award },
+              { label: t('landing.hostCountries'), value: '15+', icon: Globe },
+              { label: t('landing.resources'), value: stats?.resources ?? '—', icon: BookOpen },
+              { label: t('landing.tools'), value: '6', icon: Bot },
             ].map((s) => (
               <div key={s.label} className="text-center sm:text-left">
                 <s.icon className="mb-2 h-5 w-5 text-amber-400" />

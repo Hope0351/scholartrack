@@ -1,0 +1,32 @@
+<svg viewBox="0 0 400 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wm-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="50%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#E11D48"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Logo mark -->
+  <g transform="translate(8, 8)">
+    <rect width="64" height="64" rx="14" fill="url(#wm-grad)"/>
+    <!-- Graduation cap -->
+    <path d="M32 14 L50 22 L32 30 L14 22 Z" fill="white" opacity="0.95"/>
+    <circle cx="32" cy="22" r="2" fill="#F59E0B"/>
+    <path d="M32 22 L32 32" stroke="white" stroke-width="1" opacity="0.6"/>
+    <!-- Paths -->
+    <path d="M18 33 L18 40 Q18 44 22 44 L26 44" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.9"/>
+    <path d="M46 33 L46 40 Q46 44 42 44 L38 44" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.9"/>
+    <!-- Center arrow -->
+    <path d="M32 32 L32 50" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M27 38 L32 32 L37 38" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- Dots -->
+    <circle cx="18" cy="48" r="1.5" fill="white" opacity="0.7"/>
+    <circle cx="32" cy="50" r="1.5" fill="white" opacity="0.8"/>
+    <circle cx="46" cy="48" r="1.5" fill="white" opacity="0.7"/>
+  </g>
+
+  <!-- Wordmark text -->
+  <text x="88" y="42" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="800" fill="#1C1917">ScholarTrack</text>
+  <text x="88" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#F59E0B" letter-spacing="2">AFRICA</text>
+</svg>

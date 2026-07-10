@@ -1,29 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 30 30" style="enable-background:new 0 0 30 30;" xml:space="preserve">
-<defs>
-  <style type="text/css">
-    .st194{fill:#2D2D2D;stroke:#FFFFFF;stroke-width:0.6317;stroke-miterlimit:10;}
-    .st23{fill:#FFFFFF;}
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="scholartrack-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="50%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#E11D48"/>
+    </linearGradient>
+    <linearGradient id="scholartrack-grad-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
 
-    .z-breathe {
-      animation: breathe 2.5s ease-in-out infinite;
-    }
+  <!-- Background rounded square -->
+  <rect width="120" height="120" rx="28" fill="url(#scholartrack-grad)"/>
 
-    @keyframes breathe {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 1; }
-    }
-  </style>
-</defs>
+  <!-- Graduation cap (mortarboard) - top -->
+  <path d="M60 28 L92 42 L60 56 L28 42 Z" fill="white" opacity="0.95"/>
 
-<g>
-  <path class="st194" d="M24.51,28.51H5.49c-2.21,0-4-1.79-4-4V5.49c0-2.21,1.79-4,4-4h19.03c2.21,0,4,1.79,4,4v19.03
-    C28.51,26.72,26.72,28.51,24.51,28.51z"/>
-  <g class="z-breathe">
-    <path class="st23" d="M15.47,7.1l-1.3,1.85c-0.2,0.29-0.54,0.47-0.9,0.47h-7.1V7.09C6.16,7.1,15.47,7.1,15.47,7.1z"/>
-    <polygon class="st23" points="24.3,7.1 13.14,22.91 5.7,22.91 16.86,7.1"/>
-    <path class="st23" d="M14.53,22.91l1.31-1.86c0.2-0.29,0.54-0.47,0.9-0.47h7.09v2.33H14.53z"/>
-  </g>
-</g>
+  <!-- Cap button + tassel -->
+  <circle cx="60" cy="42" r="3.5" fill="#F59E0B"/>
+  <path d="M60 42 L60 58" stroke="white" stroke-width="1.5" opacity="0.7"/>
+  <path d="M60 58 Q62 62 60 66 Q58 62 60 58" fill="white" opacity="0.8"/>
+
+  <!-- Upward path/tracks (the "track" in ScholarTrack) -->
+  <!-- Left path -->
+  <path d="M34 62 L34 74 Q34 82 42 82 L48 82" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+  <!-- Right path -->
+  <path d="M86 62 L86 74 Q86 82 78 82 L72 82" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+
+  <!-- Center upward arrow (growth/progress) -->
+  <path d="M60 60 L60 88" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <path d="M52 68 L60 60 L68 68" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- African-inspired geometric dots (representing community/students) -->
+  <circle cx="34" cy="90" r="2.5" fill="white" opacity="0.7"/>
+  <circle cx="60" cy="94" r="2.5" fill="white" opacity="0.8"/>
+  <circle cx="86" cy="90" r="2.5" fill="white" opacity="0.7"/>
+
+  <!-- Base line (foundation) -->
+  <path d="M30 96 L90 96" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
 </svg>

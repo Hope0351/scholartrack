@@ -11,6 +11,12 @@
       "src": "/logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
