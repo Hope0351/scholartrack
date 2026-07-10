@@ -56,7 +56,7 @@ import {
 // ============================================================
 // Types
 // ============================================================
-type View = 'landing' | 'dashboard' | 'browse' | 'scholarship' | 'matcher' | 'essay' | 'tracker' | 'documents' | 'resources' | 'eligibility' | 'recletter' | 'interview' | 'compare' | 'calendar' | 'analytics' | 'profile'
+type View = 'landing' | 'dashboard' | 'browse' | 'scholarship' | 'matcher' | 'essay' | 'tracker' | 'documents' | 'resources' | 'eligibility' | 'recletter' | 'interview' | 'compare' | 'calendar' | 'analytics' | 'profile' | 'feed' | 'checklist' | 'reminders'
 
 type Profile = {
   id: string
@@ -203,10 +203,36 @@ export default function Home() {
           {view === 'calendar' && <CalendarView navigate={navigate} />}
           {view === 'analytics' && <AnalyticsView navigate={navigate} />}
           {view === 'profile' && <ProfileView navigate={navigate} />}
+          {view === 'feed' && <FeedView navigate={navigate} />}
+          {view === 'checklist' && selectedScholarship && (
+            <ChecklistView scholarship={selectedScholarship} navigate={navigate} />
+          )}
+          {view === 'reminders' && <RemindersView navigate={navigate} />}
         </motion.main>
       </AnimatePresence>
       <Footer navigate={navigate} />
     </div>
+  )
+}
+
+// ============================================================
+// REMINDER BADGE (shows unread count)
+// ============================================================
+function ReminderBadge() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/reminders?unread=true')
+      .then((r) => r.json())
+      .then((d) => setCount(d.total || 0))
+      .catch(() => {})
+  }, [])
+
+  if (count === 0) return null
+  return (
+    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+      {count > 9 ? '9+' : count}
+    </span>
   )
 }
 
@@ -218,6 +244,7 @@ function TopNav({
 }: { view: View; navigate: (v: View, s?: Scholarship) => void; onMobileMenu: () => void }) {
   const navItems: { v: View; label: string; icon: any }[] = [
     { v: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { v: 'feed', label: 'For You', icon: Heart },
     { v: 'browse', label: 'Scholarships', icon: Award },
     { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
     { v: 'essay', label: 'Essay Lab', icon: PenLine },
@@ -268,6 +295,16 @@ function TopNav({
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-9 w-9"
+            onClick={() => navigate('reminders')}
+            title="Reminders"
+          >
+            <Bell className="h-4 w-4" />
+            <ReminderBadge />
+          </Button>
+          <Button
             size="sm"
             onClick={() => navigate('matcher')}
             className="hidden bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-sm hover:from-amber-700 hover:to-orange-700 sm:flex"
@@ -297,6 +334,7 @@ function MobileNavSheet({
 }: { open: boolean; onOpenChange: (o: boolean) => void; view: View; navigate: (v: View, s?: Scholarship) => void }) {
   const navItems: { v: View; label: string; icon: any }[] = [
     { v: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { v: 'feed', label: 'For You Feed', icon: Heart },
     { v: 'browse', label: 'Browse Scholarships', icon: Award },
     { v: 'matcher', label: 'AI Matcher', icon: Sparkles },
     { v: 'essay', label: 'Essay Lab', icon: PenLine },
@@ -1313,6 +1351,9 @@ function ScholarshipDetailView({
             >
               <Target className="mr-2 h-4 w-4" />
               {addedToTracker ? 'In tracker' : 'Add to tracker'}
+            </Button>
+            <Button variant="outline" onClick={() => navigate('checklist', s)}>
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Checklist
             </Button>
             <Button
               variant={saved ? 'default' : 'outline'}
@@ -3866,6 +3907,514 @@ function ProfileView({ navigate }: { navigate: (v: View, s?: Scholarship) => voi
           )}
         </Button>
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// v3: FOR YOU FEED VIEW (AI-powered recommendations)
+// ============================================================
+function FeedView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
+  const [recommendations, setRecommendations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [generated, setGenerated] = useState<string | null>(null)
+
+  const generate = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/ai/feed')
+      const data = await res.json()
+      setRecommendations(data.recommendations || [])
+      setGenerated(data.generatedAt)
+    } catch {
+      toast({ title: 'Failed to load feed', variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
+
+  useEffect(() => { generate() }, [generate])
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <Badge className="mb-3 bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+          <Heart className="mr-1 h-3 w-3" /> Personalized for You
+        </Badge>
+        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Your Scholarship Feed</h1>
+        <p className="mt-1 text-stone-600 dark:text-stone-400">
+          AI-curated recommendations based on your profile, applications, and saved scholarships. Updated as your profile evolves.
+        </p>
+      </div>
+
+      {loading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="border-stone-200 dark:border-stone-800">
+              <CardContent className="py-4">
+                <div className="flex gap-4">
+                  <div className="h-12 w-12 animate-pulse rounded-xl bg-stone-200 dark:bg-stone-700" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-stone-200 dark:bg-stone-700" />
+                    <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+                    <div className="h-3 w-2/3 animate-pulse rounded bg-stone-100 dark:bg-stone-800" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : recommendations.length === 0 ? (
+        <Card><CardContent className="py-12">
+          <EmptyState
+            icon={Heart}
+            title="No new recommendations"
+            desc="You've already interacted with all matching scholarships. Try updating your profile to discover new opportunities."
+            action={<Button onClick={() => navigate('profile')} size="sm" className="mt-3">Update Profile</Button>}
+          />
+        </CardContent></Card>
+      ) : (
+        <>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-stone-500">
+              {recommendations.length} scholarships picked for you
+              {generated && <span className="ml-2">· Updated {formatDate(generated)}</span>}
+            </p>
+            <Button variant="ghost" size="sm" onClick={generate}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Refresh
+            </Button>
+          </div>
+          <div className="space-y-4">
+            {recommendations.map((rec, i) => {
+              const s = rec.scholarship
+              const days = daysUntil(s.deadline)
+              return (
+                <Card key={s.id} className="border-stone-200 dark:border-stone-800 overflow-hidden transition-shadow hover:shadow-md">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-sm font-bold ${
+                          rec.priority === 'high' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : rec.priority === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                        }`}>
+                          #{i + 1}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => navigateToMatchScholarship(s.id, navigate)}
+                          className="text-left text-base font-semibold text-stone-900 dark:text-stone-100 hover:text-amber-700"
+                        >
+                          {s.title}
+                        </button>
+                        <div className="mt-0.5 text-sm text-stone-500">{s.provider} · {s.fundedBy}</div>
+                        <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{rec.reason}</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{levelLabel(s.level)}</Badge>
+                          <Badge variant="outline" className="text-xs">{fundingTypeLabel(s.fundingType)}</Badge>
+                          {s.amount && <Badge variant="outline" className="text-xs">{formatMoney(s.amount)}/yr</Badge>}
+                          {days !== null && days > 0 && (
+                            <Badge variant="outline" className={`text-xs ${days < 30 ? 'border-rose-200 text-rose-700' : ''}`}>
+                              {days}d left
+                            </Badge>
+                          )}
+                          <Badge className={`text-xs ${
+                            rec.priority === 'high' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : rec.priority === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                            : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                          }`}>
+                            {rec.priority} priority
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => navigateToMatchScholarship(s.id, navigate)}>
+                        View <ChevronRight className="ml-1 h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// v3: CHECKLIST VIEW (per-scholarship task list)
+// ============================================================
+function ChecklistView({ scholarship: s, navigate }: { scholarship: Scholarship; navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [newItem, setNewItem] = useState({ title: '', category: 'documents' as string })
+
+  const fetchItems = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/checklists?scholarshipId=${s.id}`)
+      const data = await res.json()
+      setItems(data.items || [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [s.id])
+
+  useEffect(() => { fetchItems() }, [fetchItems])
+
+  const addItem = async () => {
+    if (!newItem.title.trim()) return
+    try {
+      const res = await fetch('/api/checklists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholarshipId: s.id, title: newItem.title, category: newItem.category }),
+      })
+      const data = await res.json()
+      if (data.item) {
+        setItems([...items, data.item])
+        setNewItem({ title: '', category: 'documents' })
+        toast({ title: 'Task added', description: 'New checklist item created.' })
+      }
+    } catch {
+      toast({ title: 'Failed to add', variant: 'destructive' })
+    }
+  }
+
+  const toggleItem = async (itemId: string, completed: boolean) => {
+    setItems(items.map((i) => i.id === itemId ? { ...i, completed: !completed } : i))
+    try {
+      await fetch('/api/checklists', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, completed: !completed }),
+      })
+      toast({ title: completed ? 'Marked incomplete' : 'Task completed!', description: completed ? 'Task moved back to pending.' : 'Great progress!' })
+    } catch {
+      // revert
+      setItems(items)
+    }
+  }
+
+  const deleteItem = async (itemId: string) => {
+    setItems(items.filter((i) => i.id !== itemId))
+    await fetch(`/api/checklists?itemId=${itemId}`, { method: 'DELETE' })
+    toast({ title: 'Task removed' })
+  }
+
+  const categories = [
+    { value: 'documents', label: 'Documents', icon: FileText, color: 'text-amber-600' },
+    { value: 'essays', label: 'Essays', icon: PenLine, color: 'text-rose-600' },
+    { value: 'tests', label: 'Tests', icon: Award, color: 'text-violet-600' },
+    { value: 'recommendations', label: 'Recommendations', icon: Users, color: 'text-sky-600' },
+    { value: 'forms', label: 'Forms', icon: FileCheck, color: 'text-emerald-600' },
+    { value: 'submission', label: 'Submission', icon: Target, color: 'text-orange-600' },
+    { value: 'other', label: 'Other', icon: FolderOpen, color: 'text-stone-600' },
+  ]
+
+  const completed = items.filter((i) => i.completed).length
+  const progress = items.length > 0 ? Math.round((completed / items.length) * 100) : 0
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <button onClick={() => navigate('scholarship', s)} className="mb-4 inline-flex items-center text-sm text-stone-500 hover:text-stone-700">
+        <ChevronLeft className="mr-1 h-4 w-4" /> Back to {s.title}
+      </button>
+
+      <Badge className="mb-3 bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+        <CheckCircle2 className="mr-1 h-3 w-3" /> Application Checklist
+      </Badge>
+      <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">
+        Checklist: {s.title}
+      </h1>
+      <p className="mt-1 text-stone-600 dark:text-stone-400">Track every step of your application. Stay organized, never miss a requirement.</p>
+
+      {/* Progress */}
+      <Card className="mt-6 border-stone-200 dark:border-stone-800">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-stone-700 dark:text-stone-300">Application Progress</span>
+            <span className="text-sm font-bold text-stone-900 dark:text-stone-100">{completed}/{items.length} ({progress}%)</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </CardContent>
+      </Card>
+
+      {/* Add new item */}
+      <Card className="mt-4 border-stone-200 dark:border-stone-800">
+        <CardContent className="py-4">
+          <div className="flex gap-2">
+            <Input
+              value={newItem.title}
+              onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+              placeholder="Add a task (e.g. 'Request official transcript')"
+              onKeyDown={(e) => e.key === 'Enter' && addItem()}
+            />
+            <Select value={newItem.category} onValueChange={(v) => setNewItem({ ...newItem, category: v })}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button onClick={addItem}><Plus className="h-4 w-4" /></Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Items grouped by category */}
+      {loading ? (
+        <LoadingState label="Loading checklist..." />
+      ) : items.length === 0 ? (
+        <Card className="mt-4"><CardContent className="py-12">
+          <EmptyState
+            icon={CheckCircle2}
+            title="No tasks yet"
+            desc="Add your first task above. Common tasks: request transcripts, draft SOP, request recommendation letters, take TOEFL/IELTS."
+          />
+        </CardContent></Card>
+      ) : (
+        <div className="mt-6 space-y-6">
+          {categories.map((cat) => {
+            const catItems = items.filter((i) => i.category === cat.value)
+            if (catItems.length === 0) return null
+            return (
+              <div key={cat.value}>
+                <div className="mb-2 flex items-center gap-2">
+                  <cat.icon className={`h-4 w-4 ${cat.color}`} />
+                  <h3 className="text-sm font-semibold text-stone-700 dark:text-stone-300">{cat.label}</h3>
+                  <Badge variant="outline" className="text-xs">{catItems.filter((i) => i.completed).length}/{catItems.length}</Badge>
+                </div>
+                <Card className="border-stone-200 dark:border-stone-800">
+                  <CardContent className="py-2">
+                    <div className="space-y-1">
+                      {catItems.map((item) => (
+                        <div key={item.id} className="flex items-center gap-3 rounded-lg p-2 hover:bg-stone-50 dark:hover:bg-stone-900/50 group">
+                          <button
+                            onClick={() => toggleItem(item.id, item.completed)}
+                            className="flex-shrink-0"
+                          >
+                            {item.completed ? (
+                              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                            ) : (
+                              <div className="h-5 w-5 rounded-full border-2 border-stone-300 dark:border-stone-600" />
+                            )}
+                          </button>
+                          <span className={`flex-1 text-sm ${item.completed ? 'line-through text-stone-400' : 'text-stone-700 dark:text-stone-300'}`}>
+                            {item.title}
+                          </span>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-500 transition-opacity"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Quick-add suggestions */}
+      {items.length === 0 && (
+        <Card className="mt-4 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+          <CardHeader><CardTitle className="text-sm">Quick-add common tasks</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            {[
+              { title: 'Request official transcripts', category: 'documents' },
+              { title: 'Draft Statement of Purpose', category: 'essays' },
+              { title: 'Request 2-3 recommendation letters', category: 'recommendations' },
+              { title: 'Take TOEFL/IELTS test', category: 'tests' },
+              { title: 'Complete online application form', category: 'forms' },
+              { title: 'Submit application before deadline', category: 'submission' },
+            ].map((task) => (
+              <Button
+                key={task.title}
+                variant="outline"
+                size="sm"
+                className="mr-2 mb-2 border-amber-300 bg-white text-amber-800 dark:bg-stone-900 dark:text-amber-200 dark:border-amber-700"
+                onClick={async () => {
+                  await fetch('/api/checklists', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scholarshipId: s.id, title: task.title, category: task.category }),
+                  })
+                  fetchItems()
+                }}
+              >
+                <Plus className="mr-1 h-3 w-3" /> {task.title}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// v3: REMINDERS VIEW
+// ============================================================
+function RemindersView({ navigate }: { navigate: (v: View, s?: Scholarship) => void }) {
+  const { toast } = useToast()
+  const [reminders, setReminders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchReminders = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/reminders')
+      const data = await res.json()
+      setReminders(data.reminders || [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { fetchReminders() }, [fetchReminders])
+
+  const markRead = async (id: string) => {
+    setReminders(reminders.map((r) => r.id === id ? { ...r, read: true } : r))
+    await fetch('/api/reminders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reminderId: id }),
+    })
+  }
+
+  const markAllRead = async () => {
+    setReminders(reminders.map((r) => ({ ...r, read: true })))
+    await fetch('/api/reminders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markAllRead: true }),
+    })
+    toast({ title: 'All reminders marked as read' })
+  }
+
+  const deleteReminder = async (id: string) => {
+    setReminders(reminders.filter((r) => r.id !== id))
+    await fetch(`/api/reminders?reminderId=${id}`, { method: 'DELETE' })
+  }
+
+  const priorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800'
+      case 'high': return 'border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800'
+      case 'medium': return 'border-sky-300 bg-sky-50 dark:bg-sky-950/30 dark:border-sky-800'
+      default: return 'border-stone-200 dark:border-stone-800'
+    }
+  }
+
+  const priorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+      case 'high': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+      case 'medium': return 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300'
+      default: return 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+    }
+  }
+
+  if (loading) return <LoadingState label="Loading reminders..." />
+
+  const unread = reminders.filter((r) => !r.read).length
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-6 flex items-end justify-between">
+        <div>
+          <Badge className="mb-3 bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200">
+            <Bell className="mr-1 h-3 w-3" /> {unread > 0 ? `${unread} unread` : 'All caught up'}
+          </Badge>
+          <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100 sm:text-3xl">Reminders & Alerts</h1>
+          <p className="mt-1 text-stone-600 dark:text-stone-400">Smart alerts for deadlines, profile completion, and new opportunities.</p>
+        </div>
+        {unread > 0 && (
+          <Button variant="outline" size="sm" onClick={markAllRead}>
+            <CheckCircle2 className="mr-1 h-3 w-3" /> Mark all read
+          </Button>
+        )}
+      </div>
+
+      {reminders.length === 0 ? (
+        <Card><CardContent className="py-12">
+          <EmptyState
+            icon={Bell}
+            title="No reminders yet"
+            desc="Save scholarships or add them to your tracker to receive deadline alerts."
+            action={<Button onClick={() => navigate('browse')} size="sm" className="mt-3">Browse Scholarships</Button>}
+          />
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-3">
+          {reminders.map((r) => (
+            <Card
+              key={r.id}
+              className={`border-2 transition-all ${r.read ? 'opacity-60' : priorityColor(r.priority)}`}
+            >
+              <CardContent className="py-4">
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${
+                    r.priority === 'urgent' ? 'bg-rose-500'
+                    : r.priority === 'high' ? 'bg-amber-500'
+                    : r.priority === 'medium' ? 'bg-sky-500'
+                    : 'bg-stone-400'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-stone-900 dark:text-stone-100">{r.title}</span>
+                          <Badge className={`text-xs ${priorityBadge(r.priority)}`}>{r.priority}</Badge>
+                        </div>
+                        <p className="text-sm text-stone-600 dark:text-stone-400">{r.message}</p>
+                        {r.dueDate && (
+                          <div className="mt-2 flex items-center gap-1 text-xs text-stone-500">
+                            <Calendar className="h-3 w-3" />
+                            Due: {formatDate(r.dueDate)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!r.read && (
+                          <Button variant="ghost" size="sm" onClick={() => markRead(r.id)}>
+                            <CheckCircle2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => deleteReminder(r.id)}>
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {r.scholarshipId && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="mt-2 h-auto p-0 text-amber-700 dark:text-amber-400"
+                        onClick={() => navigateToMatchScholarship(r.scholarshipId, navigate)}
+                      >
+                        View scholarship <ChevronRight className="ml-0.5 h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

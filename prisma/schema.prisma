@@ -35,6 +35,8 @@ model User {
   essays          Essay[]
   savedScholarships SavedScholarship[]
   activities      Activity[]
+  checklistItems  ChecklistItem[]
+  reminders       Reminder[]
 }
 
 model StudentProfile {
@@ -160,6 +162,8 @@ model Scholarship {
   // Relations
   applications    Application[]
   savedBy         SavedScholarship[]
+  checklistItems  ChecklistItem[]
+  reminders       Reminder[]
 
   @@index([level])
   @@index([deadline])
@@ -307,4 +311,55 @@ model Activity {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ============================================================
+// v3: APPLICATION CHECKLIST (per-scholarship task list)
+// ============================================================
+
+model ChecklistItem {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId   String
+  scholarship     Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String?
+  category        String   // "documents" | "essays" | "tests" | "recommendations" | "forms" | "submission" | "other"
+  completed       Boolean  @default(false)
+  completedAt     DateTime?
+  dueDate         DateTime?
+  order           Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, scholarshipId])
+  @@index([completed])
+}
+
+// ============================================================
+// v3: DEADLINE REMINDERS
+// ============================================================
+
+model Reminder {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId   String?
+  scholarship     Scholarship? @relation(fields: [scholarshipId], references: [id], onDelete: SetNull)
+
+  title           String
+  message         String
+  type            String   // "deadline_7d" | "deadline_3d" | "deadline_1d" | "incomplete_profile" | "new_scholarship" | "custom"
+  priority        String   @default("medium")  // "low" | "medium" | "high" | "urgent"
+  dueDate         DateTime?
+  read            Boolean  @default(false)
+  readAt          DateTime?
+
+  createdAt       DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([dueDate])
 }

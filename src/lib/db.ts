@@ -1,6 +1,15 @@
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
+// Version bumped to force new PrismaClient instance when schema changes
+const PRISMA_VERSION = 'v3-schema'
+
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient; __prismaVersion?: string }
+
+// Recreate client if version changed (handles schema updates without server restart)
+if (globalForPrisma.prisma && globalForPrisma.__prismaVersion !== PRISMA_VERSION) {
+  globalForPrisma.prisma.$disconnect().catch(() => {})
+  globalForPrisma.prisma = undefined
+}
 
 export const db =
   globalForPrisma.prisma ??
@@ -8,4 +17,5 @@ export const db =
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+globalForPrisma.prisma = db
+globalForPrisma.__prismaVersion = PRISMA_VERSION
